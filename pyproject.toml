@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algae-research-toolkit"
+version = "0.1.0"
+description = "Reproducible algae-growth simulation, RL, sound-exposure, and analysis workflows."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "ZHIXUAN ZHOU"}]
+keywords = ["algae", "simulation", "reinforcement-learning", "experiments", "research"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy>=1.26", "gymnasium>=1.0"]
+
+[project.optional-dependencies]
+analysis = ["matplotlib>=3.8", "pandas>=2.1"]
+rl = ["stable-baselines3>=2.4", "torch>=2.2"]
+experiment = [
+  "selenium>=4.20",
+  "comtypes>=1.4; platform_system == 'Windows'",
+  "pycaw>=20240210; platform_system == 'Windows'",
+]
+dev = ["matplotlib>=3.8", "pandas>=2.1", "pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+algae-research = "algae_research.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
