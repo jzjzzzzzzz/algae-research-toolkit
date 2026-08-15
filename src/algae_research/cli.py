@@ -82,7 +82,10 @@ def main(argv: list[str] | None = None) -> int:
                 seed=args.seed,
                 output_directory=args.output_directory,
             )
-            print(json.dumps({key: str(value) for key, value in asdict(result).items()}, indent=2))
+            payload = asdict(result)
+            for field in ("model_path", "report_path", "figure_path"):
+                payload[field] = str(payload[field])
+            print(json.dumps(payload, indent=2))
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"algae-research: error: {exc}", file=sys.stderr)
         return 2
