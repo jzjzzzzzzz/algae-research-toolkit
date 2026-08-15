@@ -1,0 +1,13 @@
+Algae Research Toolkit
+Copyright 2026 ZHIXUAN ZHOU
+
+This repository consolidates three repositories by the same author:
+
+* algae-project (MIT License)
+* Algae-Growth-RL-learning (MIT License)
+* base-algae (Apache License 2.0)
+
+Original source snapshots and generated research artifacts are retained under
+legacy/ and artifacts/legacy/ for provenance. Complete Git histories, issue
+records, and original attachments remain in the archived source repositories.
+
