@@ -1,0 +1,26 @@
+name: Research/model change
+description: Propose a change to assumptions, variables, measurements, or interpretation.
+title: "[Research]: "
+labels: [research]
+body:
+  - type: dropdown
+    id: evidence
+    attributes:
+      label: Change type
+      options: [model assumption, measured data, experimental protocol, statistical analysis, interpretation]
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale and evidence
+      description: Include units, provenance, citations, and validation plan.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducibility
+    attributes:
+      label: Reproducibility impact
+    validations:
+      required: true
+

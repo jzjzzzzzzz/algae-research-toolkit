@@ -1,0 +1,26 @@
+name: Software bug
+description: Report a reproducible simulation, experiment, or analysis defect.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Workflow
+      options: [simulation, reinforcement learning, sound experiment, turbidity analysis, packaging]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction command and seed
+      description: Include package versions and operating system where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+
