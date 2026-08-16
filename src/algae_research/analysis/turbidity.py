@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
+
 MEASUREMENTS = {
     "Day": [0, 3, 8, 9, 10, 11, 12],
     "1": [8063, 5890, 6098, 5781, 5678, 5930, 5102],
@@ -49,10 +51,29 @@ def summarize_turbidity(frame=None):
     """Calculate group means and standard errors for each measured day."""
 
     data = build_turbidity_frame() if frame is None else frame.copy()
+    required_columns = [
+        "Day",
+        *(column for group_columns in GROUPS.values() for column in group_columns),
+    ]
+    missing_columns = sorted(set(required_columns).difference(data.columns))
+    if missing_columns:
+        raise ValueError(f"Turbidity frame is missing required columns: {missing_columns}")
+
+    try:
+        data[required_columns] = data[required_columns].apply(
+            _pandas().to_numeric, errors="raise"
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Turbidity days and measurements must be numeric.") from exc
+    if data["Day"].isna().any() or np.isinf(data[required_columns].to_numpy(dtype=float)).any():
+        raise ValueError("Turbidity days and measurements must be finite when present.")
+
     summary = data[["Day"]].copy()
     for group_name, columns in GROUPS.items():
-        summary[f"{group_name} Mean"] = data[list(columns)].mean(axis=1)
-        summary[f"{group_name} SE"] = data[list(columns)].std(axis=1) / (len(columns) ** 0.5)
+        observations = data[list(columns)]
+        observed_counts = observations.count(axis=1)
+        summary[f"{group_name} Mean"] = observations.mean(axis=1)
+        summary[f"{group_name} SE"] = observations.std(axis=1).div(observed_counts.pow(0.5))
     return summary
 
 
@@ -101,4 +122,3 @@ def plot_turbidity(destination: str | Path | None = None, *, show: bool = False)
     else:
         plt.close(figure)
     return figure
-
