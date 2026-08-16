@@ -36,3 +36,9 @@ def test_spaces_remain_compatible_with_archived_ppo_model():
     env = AlgaeGrowthEnv()
     assert env.observation_space.shape == (5,)
     assert env.action_space.shape == (4,)
+
+
+@pytest.mark.parametrize("amount", [-0.1, float("nan"), float("inf"), float("-inf"), True])
+def test_environment_rejects_invalid_initial_algae_amount(amount):
+    with pytest.raises(ValueError, match="initial_algae_amount"):
+        AlgaeGrowthEnv(initial_algae_amount=amount)

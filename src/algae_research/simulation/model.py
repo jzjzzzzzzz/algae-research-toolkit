@@ -65,6 +65,7 @@ def apply_growth_step(
     """Apply one deterministic-except-for-temperature simulation step."""
 
     params = parameters or GrowthModelParameters()
+    _require_finite_non_negative("algae_amount", algae_amount)
     state_array = np.asarray(state, dtype=np.float32).copy()
     action_array = np.asarray(action, dtype=np.float32)
     if state_array.shape != (5,):
