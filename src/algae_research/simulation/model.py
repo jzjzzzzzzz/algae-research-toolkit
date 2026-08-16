@@ -3,12 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
+from numbers import Real
 
 import numpy as np
 from numpy.typing import NDArray
 
 FACTOR_NAMES = ("light", "nutrient", "temperature", "ultrasound", "trace_elements")
 ACTION_NAMES = ("light", "nutrient", "ultrasound", "trace_elements")
+
+
+def _require_finite_non_negative(name: str, value: Real) -> None:
+    if isinstance(value, bool) or not isinstance(value, Real) or not isfinite(float(value)):
+        raise ValueError(f"{name} must be a finite real number.")
+    if value < 0:
+        raise ValueError(f"{name} must be non-negative.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,16 +33,16 @@ class GrowthModelParameters:
     temperature_drift: float = 0.01
 
     def __post_init__(self) -> None:
-        weights = (
-            self.light_weight,
-            self.nutrient_weight,
-            self.ultrasound_weight,
-            self.trace_element_weight,
-        )
-        if any(weight < 0 for weight in weights):
-            raise ValueError("Growth weights must be non-negative.")
-        if self.growth_scale < 0 or self.decay < 0 or self.temperature_drift < 0:
-            raise ValueError("Growth scale, decay, and drift must be non-negative.")
+        for name in (
+            "light_weight",
+            "nutrient_weight",
+            "ultrasound_weight",
+            "trace_element_weight",
+            "growth_scale",
+            "decay",
+            "temperature_drift",
+        ):
+            _require_finite_non_negative(name, getattr(self, name))
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,4 +98,3 @@ def apply_growth_step(
         decay=params.decay,
         reward=growth - params.decay,
     )
-

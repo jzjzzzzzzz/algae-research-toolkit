@@ -39,7 +39,12 @@ def test_invalid_state_shape_is_rejected(shape):
         )
 
 
-def test_invalid_parameters_are_rejected():
-    with pytest.raises(ValueError):
-        GrowthModelParameters(decay=-0.1)
+@pytest.mark.parametrize("value", [-0.1, float("nan"), float("inf"), float("-inf"), True])
+def test_invalid_parameters_are_rejected(value):
+    with pytest.raises(ValueError, match="light_weight"):
+        GrowthModelParameters(light_weight=value)
 
+
+def test_finite_integer_parameters_remain_supported():
+    parameters = GrowthModelParameters(light_weight=1, temperature_drift=0)
+    assert parameters.light_weight == 1
