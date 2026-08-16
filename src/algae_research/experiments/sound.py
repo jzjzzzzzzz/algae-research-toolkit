@@ -8,6 +8,8 @@ import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from math import isfinite
+from numbers import Integral, Real
 from pathlib import Path
 from typing import Any
 
@@ -36,10 +38,22 @@ class SoundExperimentConfig:
     headless: bool = False
 
     def __post_init__(self) -> None:
-        if not self.frequencies_hz or any(frequency <= 0 for frequency in self.frequencies_hz):
-            raise ValueError("At least one positive frequency is required.")
-        if self.duration_seconds < 0 or self.break_seconds < 0:
-            raise ValueError("Durations cannot be negative.")
+        if not self.frequencies_hz:
+            raise ValueError("At least one positive integer frequency is required.")
+        for frequency in self.frequencies_hz:
+            if isinstance(frequency, bool) or not isinstance(frequency, Integral) or frequency <= 0:
+                raise ValueError("Frequencies must be positive integers.")
+        for name, value in (
+            ("duration_seconds", self.duration_seconds),
+            ("break_seconds", self.break_seconds),
+        ):
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Real)
+                or not isfinite(float(value))
+                or value < 0
+            ):
+                raise ValueError(f"{name} must be a finite, non-negative real number.")
         if not self.base_url.startswith(("https://", "http://")):
             raise ValueError("base_url must be an HTTP(S) URL.")
 

@@ -1,6 +1,8 @@
 import csv
 from pathlib import Path
 
+import pytest
+
 from algae_research.experiments.sound import (
     SoundExperimentConfig,
     build_frequency_url,
@@ -67,10 +69,30 @@ def test_fake_sound_run_logs_each_frequency(tmp_path: Path):
     assert [int(row["frequency_hz"]) for row in rows] == [200, 10_000]
 
 
-def test_configuration_rejects_invalid_frequency():
-    try:
-        SoundExperimentConfig(frequencies_hz=(0,))
-    except ValueError as exc:
-        assert "positive frequency" in str(exc)
-    else:
-        raise AssertionError("Expected invalid frequency to fail.")
+@pytest.mark.parametrize("frequencies", [(), (0,), (-1,), (200.5,), ("200",), (True,)])
+def test_configuration_rejects_invalid_frequencies(frequencies):
+    with pytest.raises(ValueError, match="positive integer|positive integers"):
+        SoundExperimentConfig(frequencies_hz=frequencies)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("duration_seconds", -1),
+        ("duration_seconds", float("nan")),
+        ("duration_seconds", float("inf")),
+        ("duration_seconds", True),
+        ("break_seconds", -1),
+        ("break_seconds", float("nan")),
+        ("break_seconds", float("inf")),
+        ("break_seconds", True),
+    ],
+)
+def test_configuration_rejects_invalid_durations(field, value):
+    with pytest.raises(ValueError, match=field):
+        SoundExperimentConfig(**{field: value})
+
+
+def test_zero_duration_and_break_remain_supported():
+    config = SoundExperimentConfig(duration_seconds=0, break_seconds=0)
+    assert config.duration_seconds == config.break_seconds == 0
