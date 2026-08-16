@@ -8,7 +8,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .model import GrowthModelParameters, apply_growth_step
+from .model import GrowthModelParameters, _require_finite_non_negative, apply_growth_step
 
 
 class AlgaeGrowthEnv(gym.Env):
@@ -27,8 +27,7 @@ class AlgaeGrowthEnv(gym.Env):
         super().__init__()
         if max_steps <= 0:
             raise ValueError("max_steps must be positive.")
-        if initial_algae_amount < 0:
-            raise ValueError("initial_algae_amount cannot be negative.")
+        _require_finite_non_negative("initial_algae_amount", initial_algae_amount)
         if render_mode not in (None, "human"):
             raise ValueError("render_mode must be None or 'human'.")
 

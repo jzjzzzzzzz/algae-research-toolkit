@@ -48,3 +48,24 @@ def test_invalid_parameters_are_rejected(value):
 def test_finite_integer_parameters_remain_supported():
     parameters = GrowthModelParameters(light_weight=1, temperature_drift=0)
     assert parameters.light_weight == 1
+
+
+@pytest.mark.parametrize("amount", [-0.1, float("nan"), float("inf"), float("-inf"), True])
+def test_invalid_algae_amount_is_rejected(amount):
+    with pytest.raises(ValueError, match="algae_amount"):
+        apply_growth_step(
+            np.full(5, 0.5, dtype=np.float32),
+            np.full(4, 0.5, dtype=np.float32),
+            amount,
+            rng=np.random.default_rng(1),
+        )
+
+
+def test_integer_algae_amount_remains_supported():
+    result = apply_growth_step(
+        np.full(5, 0.5, dtype=np.float32),
+        np.full(4, 0.5, dtype=np.float32),
+        1,
+        rng=np.random.default_rng(1),
+    )
+    assert result.algae_amount > 0
