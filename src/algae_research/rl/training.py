@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from algae_research.analysis.growth import plot_growth
 from algae_research.simulation.environment import AlgaeGrowthEnv
@@ -16,6 +17,43 @@ class TrainingResult:
     report_path: Path
     figure_path: Path
     evaluation_steps: int
+
+
+def _evaluate_policy(
+    model: Any,
+    env: AlgaeGrowthEnv,
+    *,
+    seed: int,
+) -> tuple[list[SimulationRecord], dict[str, list[float]]]:
+    observation, _ = env.reset(seed=seed)
+    records: list[SimulationRecord] = []
+    factors: dict[str, list[float]] = {
+        "Light": [],
+        "Nutrient": [],
+        "Ultrasound": [],
+        "Trace Elements": [],
+    }
+    for step_number in range(1, env.max_steps + 1):
+        action, _ = model.predict(observation, deterministic=True)
+        observation, reward, terminated, truncated, info = env.step(action)
+        record = SimulationRecord(
+            step=step_number,
+            algae_amount=float(info["algae_amount"]),
+            reward=float(reward),
+            light=float(observation[0]),
+            nutrient=float(observation[1]),
+            temperature=float(observation[2]),
+            ultrasound=float(observation[3]),
+            trace_elements=float(observation[4]),
+        )
+        records.append(record)
+        factors["Light"].append(record.light)
+        factors["Nutrient"].append(record.nutrient)
+        factors["Ultrasound"].append(record.ultrasound)
+        factors["Trace Elements"].append(record.trace_elements)
+        if terminated or truncated:
+            break
+    return records, factors
 
 
 def train_ppo(
@@ -40,30 +78,7 @@ def train_ppo(
     model = PPO("MlpPolicy", env, verbose=1, seed=seed)
     model.learn(total_timesteps=total_timesteps)
 
-    observation, _ = env.reset(seed=seed)
-    records: list[SimulationRecord] = []
-    factors = {"Light": [], "Nutrient": [], "Ultrasound": [], "Trace Elements": []}
-    for step_number in range(1, env.max_steps + 1):
-        action, _ = model.predict(observation, deterministic=True)
-        observation, reward, terminated, truncated, info = env.step(action)
-        records.append(
-            SimulationRecord(
-                step=step_number,
-                algae_amount=float(info["algae_amount"]),
-                reward=float(reward),
-                light=float(observation[0]),
-                nutrient=float(observation[1]),
-                temperature=float(observation[2]),
-                ultrasound=float(observation[3]),
-                trace_elements=float(observation[4]),
-            )
-        )
-        factors["Light"].append(float(action[0]))
-        factors["Nutrient"].append(float(action[1]))
-        factors["Ultrasound"].append(float(action[2]))
-        factors["Trace Elements"].append(float(action[3]))
-        if terminated or truncated:
-            break
+    records, factors = _evaluate_policy(model, env, seed=seed)
 
     model_base = output / "ppo_algae_model"
     model.save(str(model_base))
@@ -81,4 +96,3 @@ def train_ppo(
         figure_path=figure_path,
         evaluation_steps=len(records),
     )
-
