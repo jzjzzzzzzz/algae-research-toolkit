@@ -81,6 +81,13 @@ def append_log(entry: SoundExperimentLogEntry, destination: str | Path) -> Path:
     path = Path(destination).expanduser().resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
     write_header = not path.exists() or path.stat().st_size == 0
+    if not write_header:
+        with path.open(newline="", encoding="utf-8") as handle:
+            existing_header = next(csv.reader(handle), None)
+        if tuple(existing_header or ()) != LOG_FIELDS:
+            raise ValueError(
+                f"Existing sound experiment log has an incompatible header: {path}"
+            )
     with path.open("a", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=LOG_FIELDS)
         if write_header:

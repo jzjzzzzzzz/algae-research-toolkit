@@ -5,6 +5,8 @@ import pytest
 
 from algae_research.experiments.sound import (
     SoundExperimentConfig,
+    SoundExperimentLogEntry,
+    append_log,
     build_frequency_url,
     run_sound_experiment,
 )
@@ -96,3 +98,38 @@ def test_configuration_rejects_invalid_durations(field, value):
 def test_zero_duration_and_break_remain_supported():
     config = SoundExperimentConfig(duration_seconds=0, break_seconds=0)
     assert config.duration_seconds == config.break_seconds == 0
+
+
+def _log_entry(frequency_hz: int = 200) -> SoundExperimentLogEntry:
+    return SoundExperimentLogEntry(
+        date="2026-08-16",
+        frequency_hz=frequency_hz,
+        duration_seconds=10,
+        start_time="2026-08-16T10:00:00+08:00",
+        end_time="2026-08-16T10:00:10+08:00",
+        system="TestOS",
+        browser="Test Browser",
+        website=f"https://example.test/#{frequency_hz}",
+        status="success",
+    )
+
+
+def test_append_log_accepts_its_existing_schema(tmp_path: Path):
+    log = tmp_path / "experiment.csv"
+    append_log(_log_entry(200), log)
+    append_log(_log_entry(10_000), log)
+
+    with log.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert [int(row["frequency_hz"]) for row in rows] == [200, 10_000]
+
+
+def test_append_log_rejects_incompatible_header_without_modifying_file(tmp_path: Path):
+    log = tmp_path / "experiment.csv"
+    original = "wrong,header\n1,2\n"
+    log.write_text(original, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="incompatible header"):
+        append_log(_log_entry(), log)
+
+    assert log.read_text(encoding="utf-8") == original
