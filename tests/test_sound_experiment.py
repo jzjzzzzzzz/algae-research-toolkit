@@ -45,6 +45,12 @@ class FakeDriver:
         self.closed = True
 
 
+class CleanupFailDriver(FakeDriver):
+    def quit(self):
+        self.closed = True
+        raise RuntimeError("cleanup failed")
+
+
 def test_frequency_url_uses_hash_route():
     assert build_frequency_url(200) == "https://www.szynalski.com/tone-generator/#200"
 
@@ -133,3 +139,27 @@ def test_append_log_rejects_incompatible_header_without_modifying_file(tmp_path:
         append_log(_log_entry(), log)
 
     assert log.read_text(encoding="utf-8") == original
+
+
+def test_cleanup_failure_warns_without_erasing_completed_entries(tmp_path: Path):
+    driver = CleanupFailDriver()
+    log = tmp_path / "experiment.csv"
+    config = SoundExperimentConfig(
+        frequencies_hz=(200,),
+        duration_seconds=0,
+        break_seconds=0,
+        log_path=log,
+    )
+
+    with pytest.warns(RuntimeWarning, match="cleanup failed"):
+        entries = run_sound_experiment(
+            config,
+            driver_factory=lambda _headless: driver,
+            sleep=lambda _seconds: None,
+        )
+
+    assert driver.closed is True
+    assert [entry.status for entry in entries] == ["success"]
+    with log.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert [row["status"] for row in rows] == ["success"]

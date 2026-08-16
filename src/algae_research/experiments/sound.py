@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import platform
 import time
+import warnings
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -206,5 +207,8 @@ def run_sound_experiment(
             if index < len(config.frequencies_hz) - 1:
                 sleep(config.break_seconds)
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception as exc:  # noqa: BLE001 - cleanup errors vary by WebDriver.
+            warnings.warn(f"WebDriver cleanup failed: {exc}", RuntimeWarning, stacklevel=2)
     return entries
